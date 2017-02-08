@@ -57,7 +57,7 @@ var dt = (function () {
     }
 
     DecisionForest.prototype.predict = function (item) {
-        return predictDecisionForest(this.trees, item);
+        return predictRandomForest(this.trees, item);
     }
 
     /**
@@ -529,13 +529,34 @@ var dt = (function () {
      * Building array of decision forest
      */
     function buildDecisionForest(builder, maxTreesNumber, maxTreesDepth) {
-        var items = builder.trainingSet;
+        var items = builder.trainingSet,
+            ignoredAttributes = builder.ignoredAttributes;
         var currTreesNumber = 0;
         var _buildDecisionForest = function _buildDecisionForest() {
             var tree = new DecisionTree(builder);
-            debugger;
+            var recursiveTree = function recursiveTree(node, depth, features) {
+                if (depth > maxTreesDepth && (node.match && node.match.match && node.notMatch && node.notMatch.notMatch)) {
+                    builder.ignoredAttributes = builder.ignoredAttributes.concat(features);
+                    var tree = new DecisionTree(builder);
+                    $.extend(node, tree.root);
+                }
+                else {
+                    if (node.attribute) {
+                        features = features.concat(node.attribute);
+                        if (node.notMatch) {
+                            recursiveTree(node.notMatch, depth + 1, features);
+                        }
+                        if (node.match) {
+                            recursiveTree(node.match, depth + 1, features);
+                        }
+                    }
+                }
+
+            };
+            recursiveTree(tree.root, 0, []);
+            return [tree];
         };
-        _buildDecisionForest();
+        return _buildDecisionForest();
     }
 
     /**
