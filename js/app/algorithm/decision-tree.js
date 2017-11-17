@@ -1,15 +1,8 @@
 /* exported dt */
-/* globals _, ClassifierHelper */
+/* globals _, ClassifierHelper, Utility */
 
 var dt = (function () {
 
-    /**
-     * Creates an instance of DecisionTree
-     *
-     * @constructor
-     * @param builder - contains training set and
-     *                  some configuration parameters
-     */
     function DecisionTree(builder) {
         this.root = buildDecisionTree({
             trainingSet: builder.trainingSet,
@@ -26,15 +19,7 @@ var dt = (function () {
         return predict(this.root, item);
     };
 
-    /**
-     * Creates an instance of RandomForest
-     * with specific number of trees
-     *
-     * @constructor
-     * @param builder - contains training set and some
-     *                  configuration parameters for
-     *                  building decision trees
-     */
+
     function RandomForest(builder, treesNumber) {
         this.trees = buildRandomForest(builder, treesNumber);
     }
@@ -43,27 +28,15 @@ var dt = (function () {
         return predictRandomForest(this.trees, item);
     };
 
-    /**
-     * Creates an instance of DecisionForest
-     * with specific number of trees
-     *
-     * @constructor
-     * @param builder - contains training set and some
-     *                  configuration parameters for
-     *                  building decision trees
-     */
+
     function DecisionForest(builder, maxTreesNumber, maxTreesDepth) {
         this.trees = buildDecisionForest(builder, maxTreesNumber, maxTreesDepth);
     }
 
     DecisionForest.prototype.predict = function (item) {
-        return predictRandomForest(this.trees, item);
+        return predictDecisionForest(this.trees, item);
     }
 
-    /**
-     * Transforming array to object with such attributes
-     * as elements of array (afterwards it can be used as HashSet)
-     */
     function arrayToHashSet(array) {
         var hashSet = {};
         if (array) {
@@ -75,26 +48,16 @@ var dt = (function () {
         return hashSet;
     }
 
-    /**
-     * Calculating how many objects have the same
-     * values of specific attribute.
-     *
-     * @param items - array of objects
-     *
-     * @param attr  - variable with name of attribute,
-     *                which embedded in each object
-     */
     function countUniqueValues(items, attr) {
         var counter = {};
 
-        // detecting different values of attribute
+
         for (var i = items.length - 1; i >= 0; i--) {
             // items[i][attr] - value of attribute
             counter[items[i][attr]] = 0;
         }
 
-        // counting number of occurrences of each of values
-        // of attribute
+
         for (var i = items.length - 1; i >= 0; i--) {
             counter[items[i][attr]] += 1;
         }
@@ -102,18 +65,9 @@ var dt = (function () {
         return counter;
     }
 
-    /**
-     * Calculating entropy of array of objects
-     * by specific attribute.
-     *
-     * @param items - array of objects
-     *
-     * @param attr  - variable with name of attribute,
-     *                which embedded in each object
-     */
+
     function entropy(items, attr) {
-        // counting number of occurrences of each of values
-        // of attribute
+
         var counter = countUniqueValues(items, attr);
 
         var entropy = 0;
@@ -126,26 +80,7 @@ var dt = (function () {
         return entropy;
     }
 
-    /**
-     * Splitting array of objects by value of specific attribute,
-     * using specific predicate and pivot.
-     *
-     * Items which matched by predicate will be copied to
-     * the new array called 'match', and the rest of the items
-     * will be copied to array with name 'notMatch'
-     *
-     * @param items - array of objects
-     *
-     * @param attr  - variable with name of attribute,
-     *                which embedded in each object
-     *
-     * @param predicate - function(x, y)
-     *                    which returns 'true' or 'false'
-     *
-     * @param pivot - used as the second argument when
-     *                calling predicate function:
-     *                e.g. predicate(item[attr], pivot)
-     */
+
     function split(items, attr, predicate, pivot) {
         var match = [];
         var notMatch = [];
@@ -163,7 +98,6 @@ var dt = (function () {
                 notMatch.push(item);
             }
         }
-        ;
 
         return {
             match: match,
@@ -171,18 +105,8 @@ var dt = (function () {
         };
     }
 
-    /**
-     * Finding value of specific attribute which is most frequent
-     * in given array of objects.
-     *
-     * @param items - array of objects
-     *
-     * @param attr  - variable with name of attribute,
-     *                which embedded in each object
-     */
     function mostFrequentValue(items, attr) {
-        // counting number of occurrences of each of values
-        // of attribute
+
         var counter = countUniqueValues(items, attr);
 
         var mostFrequentCount = 0;
@@ -194,7 +118,6 @@ var dt = (function () {
                 mostFrequentValue = value;
             }
         }
-        ;
 
         return mostFrequentValue;
     }
@@ -207,75 +130,6 @@ var dt = (function () {
             return a >= b
         }
     };
-
-    // var getBestSplit2 = function getBestSplit2(trainingSet, categoryAttr, options) {
-    //     var initialEntropy = options.initialEntropy,
-    //         ignoredAttributes = options.ignoredAttributes,
-    //         alreadyChecked = options.alreadyChecked;
-    //     var bestSplit = {gain: 0};
-    //
-    //     for (var i = trainingSet.length - 1; i >= 0; i--) {
-    //         var item = trainingSet[i];
-    //
-    //         // iterating over all attributes of item
-    //         for (var attr in item) {
-    //             if ((attr == categoryAttr) || ignoredAttributes[attr]) {
-    //                 continue;
-    //             }
-    //
-    //             // let the value of current attribute be the pivot
-    //             var pivot = item[attr];
-    //
-    //             // pick the predicate
-    //             // depending on the type of the attribute value
-    //             var predicateName;
-    //             if (typeof pivot == 'number') {
-    //                 predicateName = '>=';
-    //             } else {
-    //                 // there is no sense to compare non-numeric attributes
-    //                 // so we will check only equality of such attributes
-    //                 predicateName = '==';
-    //             }
-    //
-    //             var attrPredPivot = attr + predicateName + pivot;
-    //             if (alreadyChecked[attrPredPivot]) {
-    //                 // skip such pairs of 'attribute-predicate-pivot',
-    //                 // which been already checked
-    //                 continue;
-    //             }
-    //             alreadyChecked[attrPredPivot] = true;
-    //
-    //             var predicate = predicates[predicateName];
-    //
-    //             // splitting training set by given 'attribute-predicate-value'
-    //             var currSplit = split(trainingSet, attr, predicate, pivot);
-    //
-    //             // calculating entropy of subsets
-    //             var matchEntropy = entropy(currSplit.match, categoryAttr);
-    //             var notMatchEntropy = entropy(currSplit.notMatch, categoryAttr);
-    //
-    //             // calculating informational gain
-    //             var newEntropy = 0;
-    //             newEntropy += matchEntropy * currSplit.match.length;
-    //             newEntropy += notMatchEntropy * currSplit.notMatch.length;
-    //             newEntropy /= trainingSet.length;
-    //             var currGain = initialEntropy - newEntropy;
-    //
-    //             if (currGain > bestSplit.gain) {
-    //                 // remember pairs 'attribute-predicate-value'
-    //                 // which provides informational gain
-    //                 bestSplit = currSplit;
-    //                 bestSplit.predicateName = predicateName;
-    //                 bestSplit.predicate = predicate;
-    //                 bestSplit.attribute = attr;
-    //                 bestSplit.pivot = pivot;
-    //                 bestSplit.gain = currGain;
-    //             }
-    //         }
-    //     }
-    //     return bestSplit;
-    // };
-
 
     var getBestSplit = function getBestSplit(trainingSet, categoryAttr, options) {
         var initialEntropy = options.initialEntropy,
@@ -300,52 +154,47 @@ var dt = (function () {
         for (var i = trainingSet.length - 1; i >= 0; i--) {
             var item = trainingSet[i];
 
-            // iterating over all attributes of item
+
             for (var attr in item) {
                 if ((attr == categoryAttr) || ignoredAttributes[attr]) {
                     continue;
                 }
 
-                // let the value of current attribute be the pivot
+
                 var pivot = item[attr];
 
-                // pick the predicate
-                // depending on the type of the attribute value
+
                 var predicateName;
                 if (typeof pivot == 'number') {
                     predicateName = '>=';
                 } else {
-                    // there is no sense to compare non-numeric attributes
-                    // so we will check only equality of such attributes
+
                     predicateName = '==';
                 }
 
                 var attrPredPivot = attr + predicateName + pivot;
                 if (alreadyChecked[attrPredPivot]) {
-                    // skip such pairs of 'attribute-predicate-pivot',
-                    // which been already checked
                     continue;
                 }
                 alreadyChecked[attrPredPivot] = true;
 
                 var predicate = predicates[predicateName];
 
-                // splitting training set by given 'attribute-predicate-value'
+
                 var currSplit = split(trainingSet, attr, predicate, pivot);
 
-                // calculating entropy of subsets
+
                 var matchEntropy = entropy(currSplit.match, categoryAttr);
                 var notMatchEntropy = entropy(currSplit.notMatch, categoryAttr);
 
-                // calculating informational gain
+
                 var newEntropy = 0;
                 newEntropy += matchEntropy * currSplit.match.length;
                 newEntropy += notMatchEntropy * currSplit.notMatch.length;
                 newEntropy /= trainingSet.length;
                 var currGain = initialEntropy - newEntropy;
 
-                // remember pairs 'attribute-predicate-value'
-                // which provides informational gain
+
                 var tmpSplit = {};
                 tmpSplit = currSplit;
                 tmpSplit.predicateName = predicateName;
@@ -418,9 +267,6 @@ var dt = (function () {
         }
     }
 
-    /**
-     * Function for building decision tree
-     */
     function buildDecisionTree(builder) {
 
         var trainingSet = builder.trainingSet;
@@ -431,9 +277,6 @@ var dt = (function () {
         var ignoredAttributes = builder.ignoredAttributes;
 
         if ((maxTreeDepth == 0) || (trainingSet.length <= minItemsCount)) {
-            // restriction by maximal depth of tree
-            // or size of training set is to small
-            // so we have to terminate process of building tree
             return {
                 category: mostFrequentValue(trainingSet, categoryAttr)
             };
@@ -442,20 +285,13 @@ var dt = (function () {
         var initialEntropy = entropy(trainingSet, categoryAttr);
 
         if (initialEntropy <= entropyThrehold) {
-            // entropy of training set too small
-            // (it means that training set is almost homogeneous),
-            // so we have to terminate process of building tree
             return {
                 category: mostFrequentValue(trainingSet, categoryAttr)
             };
         }
 
-        // used as hash-set for avoiding the checking of split by rules
-        // with the same 'attribute-predicate-pivot' more than once
         var alreadyChecked = {};
 
-        // this variable expected to contain rule, which splits training set
-        // into subsets with smaller values of entropy (produces informational gain)
         var bestSplit = getBestSplit(
             trainingSet,
             categoryAttr,
@@ -467,7 +303,6 @@ var dt = (function () {
             });
 
         if (!bestSplit.gain) {
-            // can't find optimal split
             return {category: mostFrequentValue(trainingSet, categoryAttr)};
         }
 
@@ -493,20 +328,21 @@ var dt = (function () {
         };
     }
 
-    /**
-     * Classifying item, using decision tree
-     */
     function predict(tree, item) {
         var attr,
             value,
             predicate,
             pivot;
 
-        // Traversing tree from the root to leaf
+
         while (true) {
 
-            if (tree.category) {
-                // only leafs contains predicted category
+            if (!tree) {
+                return null;
+            }
+
+            if (typeof tree.category !== 'undefined') {
+
                 return tree.category;
             }
 
@@ -516,7 +352,7 @@ var dt = (function () {
             predicate = tree.predicate;
             pivot = tree.pivot;
 
-            // move to one of subtrees
+
             if (predicate(value, pivot)) {
                 tree = tree.match;
             } else {
@@ -525,10 +361,59 @@ var dt = (function () {
         }
     }
 
-    /**
-     * Building array of decision forest
-     */
     function buildDecisionForest(builder, maxTreesNumber, maxTreesDepth) {
+        var allAttributes = [];
+        for (var i = 0; i < builder.trainingSet.length; i++) {
+            var el = builder.trainingSet[i];
+            for (var key in el) {
+                if (el.hasOwnProperty(key)) {
+                    allAttributes.push(key);
+                }
+            }
+        }
+        allAttributes = Utility.unique(allAttributes);
+        var allAttributeLength = allAttributes.length - 1;//Учитываем, что 1 аттр - это категория (класс)
+        var res = [];
+        var ignoredAttributes = builder.ignoredAttributes;
+
+        function buildSmartTree() {
+            builder.ignoredAttributes = ignoredAttributes;
+            var tree = new DecisionTree(builder);
+            var iter = 1;
+            var attributes = [];
+
+            function getIgnoredAttributes(iter, node) {
+                if (!node) {
+                    return;
+                }
+                if (iter < maxTreesDepth) {
+                    getIgnoredAttributes(iter + 1, node.match);
+                    getIgnoredAttributes(iter + 1, node.notMatch);
+                }
+                if (typeof node.attribute !== 'undefined') {
+                    attributes.push(node.attribute);
+                    if (iter >= maxTreesDepth) {
+                        node.match = null;
+                        node.notMatch = null;
+                        node.attribute = null;
+                    }
+                }
+            }
+
+            getIgnoredAttributes(iter, tree.root);
+            ignoredAttributes = ignoredAttributes.concat(Utility.unique(attributes));
+            res.push(tree);
+        }
+
+        do {
+            buildSmartTree();
+        } while (allAttributeLength > ignoredAttributes.length);
+
+        return res;
+    }
+
+
+    function buildDecisionForest2(builder, maxTreesNumber, maxTreesDepth) {
         var items = builder.trainingSet,
             ignoredAttributes = builder.ignoredAttributes;
         var currTreesNumber = 0;
@@ -559,25 +444,20 @@ var dt = (function () {
         return _buildDecisionForest();
     }
 
-    /**
-     * Building array of decision trees
-     */
+
     function buildRandomForest(builder, treesNumber) {
         var items = builder.trainingSet;
 
-        // creating training sets for each tree
         var trainingSets = [];
         for (var t = 0; t < treesNumber; t++) {
             trainingSets[t] = [];
         }
         for (var i = items.length - 1; i >= 0; i--) {
-            // assigning items to training sets of each tree
-            // using 'round-robin' strategy
             var correspondingTree = i % treesNumber;
             trainingSets[correspondingTree].push(items[i]);
         }
 
-        // building decision trees
+
         var forest = [];
         for (var t = 0; t < treesNumber; t++) {
             builder.trainingSet = trainingSets[t];
@@ -588,14 +468,6 @@ var dt = (function () {
         return forest;
     }
 
-    /**
-     * Each of decision tree classifying item
-     * ('voting' that item corresponds to some class).
-     *
-     * This function returns hash, which contains
-     * all classifying results, and number of votes
-     * which were given for each of classifying results
-     */
     function predictRandomForest(forest, item) {
         var result = {};
         for (var i in forest) {
@@ -603,6 +475,24 @@ var dt = (function () {
             var prediction = tree.predict(item);
             result[prediction] = result[prediction] ? result[prediction] + 1 : 1;
         }
+        return result;
+    }
+
+    function predictDecisionForest(forest, item) {
+        var result = {};
+        var prediction;
+        var prevPrediction;
+        var i = 0;
+        do {
+            var tree = forest[i];
+            prediction = tree.predict(item);
+            result[prevPrediction] = undefined;
+            if (result[prediction] === undefined) {
+                result[prediction] = 1;
+            }
+            prevPrediction = prediction;
+            i++;
+        } while (i < forest.length && prediction === null);
         return result;
     }
 

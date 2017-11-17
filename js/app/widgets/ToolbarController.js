@@ -19,6 +19,7 @@ var ToolbarController = (function () {
   <li data-data="gener3_examples" data-data-test="gener3_samples" class="data-select-btn">gener3_examples</li>
   <li data-data="voting_examples" data-data-test="voting_samples" class="data-select-btn">voting_examples</li>
   <li data-data="chess_examples" data-data-test="chess_samples" class="data-select-btn">chess_examples</li>
+  <li data-data="german_examples" data-data-test="german_samples" class="data-select-btn">german</li>
   </ul>
 </div>
 
@@ -106,6 +107,9 @@ var ToolbarController = (function () {
             }
             outerDiv.append(innerDiv);
             $('.left-panel').empty().append(outerDiv);
+            $('body').find('table').children(':first').prepend('<thead><tr class="prediction-table-row-caption info"><th class="prediction-table-prediction-caption" style="display: inline-block">Из них ошибочно: </th><th class="prediction-table-real-caption" style="display: inline-block"> '+ $('tbody').find('.info.warning').length+'</th></tr></thead>');
+            $('body').find('table').children(':first').prepend('<thead><tr class="prediction-table-row-caption info"><th class="prediction-table-prediction-caption" style="display: inline-block">Из них верно: </th><th class="prediction-table-real-caption" style="display: inline-block"> '+ $('tbody').find('.info:not(.warning)').length+'</th></tr></thead>');
+            $('body').find('table').children(':first').prepend('<thead><tr class="prediction-table-row-caption info"><th class="prediction-table-prediction-caption" style="display: inline-block">Классифицировано всего: </th><th class="prediction-table-real-caption" style="display: inline-block"> '+$('tbody').find('.info').length+'</th></tr></thead>');
         }
     };
 

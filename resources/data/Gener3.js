@@ -775,9 +775,6 @@ var gener3_examples = [
 {"a":"1","b":"1","c":"1","d":"1","e":"1","f":"1","g":"1","h":"1","i":"1","j":"1","classification":"false"},
 
 ];
-gener3_examples = _(gener3_examples);
-var gener3_features = ['a','b','c','d','e','f','g','h','i','j'];
-
 
 var gener3_samples = [
 {"a":"1","b":"1","c":"1","d":"1","e":"1","f":"0","g":"0","h":"0","i":"1","j":"0","classification":"true"},

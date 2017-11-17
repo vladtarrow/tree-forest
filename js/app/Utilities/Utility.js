@@ -22,5 +22,12 @@ var Utility = (function () {
         return array;
     };
 
+    Utility.unique = function unique(array) {
+        var newArray = array.filter(function (item, i, ar) {
+            return ar.indexOf(item) === i;
+        });
+        return newArray;
+    };
+
     return Utility;
 })();
